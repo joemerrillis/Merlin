@@ -1,40 +1,48 @@
-import { encoding_for_model } from "js-tiktoken";
+// src/chunker.js
 
-// This can use GPT-3.5/4 token encoding; adjust as needed.
-const enc = encoding_for_model("gpt-3.5-turbo");
-const MAX_TOKENS = 700;   // Safe for most embedding models.
-const OVERLAP = 2;        // Number of overlapping sentences.
+const MAX_CHUNK_LENGTH = 1800;      // ~700 tokens; tweak as needed
+const CHUNK_OVERLAP = 200;          // chars of overlap between chunks
 
+// Split text into paragraphs (by blank lines)
 function splitIntoParagraphs(text) {
-  return text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  return text
+    .replace(/\r\n/g, '\n') // Normalize newlines
+    .split(/\n\s*\n+/)
+    .map(p => p.trim())
+    .filter(Boolean);
 }
 
-// Basic tokenizer using tiktoken
-function countTokens(text) {
-  return enc.encode(text).length;
-}
-
+// Main chunker: merges paragraphs up to length, with overlap between chunks
 export function chunkText(text) {
   const paragraphs = splitIntoParagraphs(text);
   const chunks = [];
-  let chunk = "";
-  let chunkTokens = 0;
+  let chunk = '';
 
   for (let i = 0; i < paragraphs.length; i++) {
-    const p = paragraphs[i];
-    const pTokens = countTokens(p);
+    const para = paragraphs[i];
 
-    if (chunkTokens + pTokens > MAX_TOKENS) {
-      if (chunk) chunks.push(chunk.trim());
-      // Overlap: start next chunk with last N sentences of previous
-      const prevSentences = chunk.split(/\. /).slice(-OVERLAP).join('. ');
-      chunk = prevSentences + '\n\n' + p;
-      chunkTokens = countTokens(chunk);
+    // If adding this paragraph exceeds limit, finalize the current chunk
+    if ((chunk + '\n\n' + para).length > MAX_CHUNK_LENGTH) {
+      if (chunk) {
+        chunks.push(chunk.trim());
+        // Start next chunk with overlap from previous
+        chunk = chunk.slice(-CHUNK_OVERLAP) + '\n\n' + para;
+      } else {
+        // Paragraph itself is longer than max, just split at max length
+        let start = 0;
+        while (start < para.length) {
+          const subChunk = para.slice(start, start + MAX_CHUNK_LENGTH);
+          chunks.push(subChunk.trim());
+          start += MAX_CHUNK_LENGTH - CHUNK_OVERLAP; // overlap
+        }
+        chunk = '';
+      }
     } else {
-      chunk += '\n\n' + p;
-      chunkTokens += pTokens;
+      chunk += (chunk ? '\n\n' : '') + para;
     }
   }
-  if (chunk.trim().length > 0) chunks.push(chunk.trim());
+  if (chunk.trim().length > 0) {
+    chunks.push(chunk.trim());
+  }
   return chunks;
 }
