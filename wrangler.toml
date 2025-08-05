@@ -10,5 +10,5 @@ OPENAI_API_KEY = "your_openai_key"
 
 [[vectorize]]
 binding = "VECTORIZE"
-index_name = "spells"
+index_name = "merlin-spellbook"
 # If using D1 for meta, add a binding here
