@@ -1,0 +1,14 @@
+name = "merlin-spellbook"
+main = "src/index.js"
+compatibility_date = "2024-07-26"
+
+[vars]
+OPENAI_API_KEY = "your_openai_key"
+
+[env.production.vars]
+OPENAI_API_KEY = "your_openai_key"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "spells"
+# If using D1 for meta, add a binding here
