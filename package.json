@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
-    "js-tiktoken": "^1.0.7"        // For tokenization, fast, works in Workers
+    "js-tiktoken": "^1.0.7"
   },
   "devDependencies": {}
 }
